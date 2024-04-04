@@ -257,6 +257,7 @@ class TrainingClient(object):
         num_ps_replicas: Optional[int] = None,
         packages_to_install: Optional[List[str]] = None,
         pip_index_url: str = constants.DEFAULT_PIP_INDEX_URL,
+        image_pull_secrets: Optional[List[str]] = None,
     ):
         """Create the Training Job.
         Job can be created using one of the following options:
@@ -367,6 +368,7 @@ class TrainingClient(object):
             # Get Pod template spec using the above container.
             pod_template_spec = utils.get_pod_template_spec(
                 containers=[container_spec],
+                image_pull_secrets=image_pull_secrets,
             )
 
             # Configure template for different Jobs.

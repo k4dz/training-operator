@@ -166,7 +166,8 @@ def get_command_using_train_func(
                 {func_code}
                 EOM
                 printf "%s" \"$SCRIPT\" > \"$program_path/ephemeral_script.py\"
-                python3 -u \"$program_path/ephemeral_script.py\""""
+                python3 -u \"$program_path/ephemeral_script.py\" 
+        """
     )
 
     # Add function code to the execute script.
@@ -237,6 +238,7 @@ def get_pod_template_spec(
     containers: List[models.V1Container],
     init_containers: Optional[List[models.V1Container]] = None,
     volumes: Optional[List[models.V1Volume]] = None,
+    image_pull_secrets: Optional[List[str]] = None,
 ) -> models.V1PodTemplateSpec:
     """
     Get Pod template spec for the given parameters.
@@ -251,6 +253,7 @@ def get_pod_template_spec(
             init_containers=init_containers,
             containers=containers,
             volumes=volumes,
+            image_pull_secrets=[models.V1LocalObjectReference(name=image_pull_secret) for image_pull_secret in image_pull_secrets]
         ),
     )
 
