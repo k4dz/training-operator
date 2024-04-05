@@ -258,6 +258,7 @@ class TrainingClient(object):
         packages_to_install: Optional[List[str]] = None,
         pip_index_url: str = constants.DEFAULT_PIP_INDEX_URL,
         image_pull_secrets: Optional[List[str]] = None,
+        volumes_to_mount: Optional[Dict[str, str]] = None,
     ):
         """Create the Training Job.
         Job can be created using one of the following options:
@@ -312,7 +313,9 @@ class TrainingClient(object):
                 to the base image packages if `train_func` parameter is set.
                 These packages are installed before executing the objective function.
             pip_index_url: The PyPI url from which to install Python packages.
-
+            image_pull_secrets: The List of image pull secrets for the Jobs.
+            volumes_to_mount: The dictionary of volume name and volume path to mount
+                in the Job container.
         Raises:
             ValueError: Invalid input parameters.
             TimeoutError: Timeout to create Job.
@@ -341,6 +344,27 @@ class TrainingClient(object):
                 f"Job kind must be one of these: {constants.JOB_PARAMETERS.keys()}"
             )
 
+        volume_mounts=None
+        volumes=None
+        if volumes_to_mount:
+            volume_mounts = [
+                models.V1VolumeMount(
+                    name= volume_name,
+                    mount_path= volume_path,
+                )
+                for volume_name, volume_path in volumes_to_mount.items()
+            ]
+
+            volumes = [
+                models.V1Volume(
+                    name=volume_name,
+                    persistent_volume_claim=models.V1PersistentVolumeClaimVolumeSource(
+                        claim_name=volume_name
+                    ),
+                )
+                for volume_name, volume_path in volumes_to_mount.items()]
+
+
         # If Training function or base image is set, configure Job template.
         if job is None and (train_func is not None or base_image is not None):
             # Job name must be set to configure Job template.
@@ -363,11 +387,13 @@ class TrainingClient(object):
                 packages_to_install=packages_to_install,
                 pip_index_url=pip_index_url,
                 resources=resources_per_worker,
+                volume_mounts=volume_mounts,
             )
 
             # Get Pod template spec using the above container.
             pod_template_spec = utils.get_pod_template_spec(
                 containers=[container_spec],
+                volumes=volumes,
                 image_pull_secrets=image_pull_secrets,
             )
 
